@@ -6,17 +6,12 @@
 typedef struct server {
   int fileDescriptor;
   struct sockaddr_in address;
-  HashMap * endpoints;
+  HashMap * handlers;
 } Server;
 
 
-typedef struct response {
-  int status_code;
-  const char* data;
-} Response;
-
 Server *getServer(int addr, int port);
-void attachEndpointMap(Server *server, HashMap * endpoints);
+void attachHandlerMap(Server *server, HashMap * handlers);
 bool runServer(Server *server);
 void stopServer(Server *server);
 void freeServer(Server *server);

@@ -7,13 +7,18 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "create_response.h"
 #include "hashmap.h"
 #include "http_server.h"
+#include "mystring.h"
 
 Response *indexEndpoint(Request *request) {
   Response *response = (Response *)malloc(sizeof(Response));
+  *response = getDefaultResponse();
   response->status_code = 200;
-  response->data = "<b>Hello world</b>";
+  char html[] = "<b>Hello world</b>";
+  int a;
+  response->data = {strdup(html), sizeof(html) -1, sizeof(html)};
   return response;
 }
 
@@ -21,9 +26,10 @@ int main(int argc, char const *argv[]) {
   Server *server = getServer(0, 8080);
   HashMap endpointMap = createHashMap(50);
   set(&endpointMap, "/", (void *)indexEndpoint);
-  attachEndpointMap(server, &endpointMap);
+  attachHandlerMap(server, &endpointMap);
 
   runServer(server);
+  freeServer(server);
   /*char *str = strdup("GET /index.html HTML1.1\n"*/
   /*                   "Thing:  aaaa\n"*/
   /*                   "Other-Thing:  bbbb\n"*/

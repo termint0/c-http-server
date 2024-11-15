@@ -1,9 +1,32 @@
 #include <assert.h>
+#include <ios>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "hashmap.h"
+
+Iterator iterMap(HashMap *map) {
+  for (size_t i = 0; i < map->n; ++i) {
+    if (map->data[i].len != 0) {
+      return {map->data[i].data, i, 0};
+    }
+  }
+  return {NULL, 0, 0};
+}
+Iterator next(HashMap *map, Iterator *it) {
+  Bucket * bucket = map->data + it->bucketIdx;
+  if (it->itemIdx < bucket->len - 1) {
+    return {map->data[it->bucketIdx].data + it->itemIdx + 1, it->bucketIdx, it->itemIdx + 1};
+  }
+
+  for (size_t i = it->bucketIdx + 1; i < map->n; ++i) {
+    if (map->data[i].len != 0) {
+      return {map->data[i].data, i, 0};
+    }
+  }
+  return {NULL, 0, 0};
+}
 
 size_t modPow(size_t n, size_t mod) {
   size_t a = 1;
@@ -31,12 +54,12 @@ HashMap createHashMap(size_t n) {
   return map;
 }
 
-void deleteHashMap(HashMap * map) {
+void deleteHashMap(HashMap *map) {
   if (map == NULL) {
     return;
   }
   for (size_t i = 0; i < map->n; ++i) {
-    Bucket * bucket = map->data + i;
+    Bucket *bucket = map->data + i;
     for (size_t j = 0; j < bucket->len; ++j) {
       free((char *)bucket->data[j].key);
     }
@@ -91,103 +114,132 @@ const void *get(HashMap *map, const char *key) {
 }
 
 void testHashMap() {
-    HashMap map = createHashMap(10);
+  HashMap map = createHashMap(10);
 
-    // Test 1: Basic insertion and retrieval
-    const char *val1 = "Goeiemiddag makker";
-    set(&map, "hello", val1);
-    assert(strcmp((const char *)get(&map, "hello"), val1) == 0);
+  // Test 1: Basic insertion and retrieval
+  const char *val1 = "Goeiemiddag makker";
+  set(&map, "hello", val1);
+  assert(strcmp((const char *)get(&map, "hello"), val1) == 0);
 
-    // Test 2: Check non-existent key
-    assert(get(&map, "non_existent") == NULL);
+  // Test 2: Check non-existent key
+  assert(get(&map, "non_existent") == NULL);
 
-    // Test 3: Update value for existing key
-    const char *val2 = "Hello again";
-    set(&map, "hello", val2);
-    assert(strcmp((const char *)get(&map, "hello"), val2) == 0);
+  // Test 3: Update value for existing key
+  const char *val2 = "Hello again";
+  set(&map, "hello", val2);
+  assert(strcmp((const char *)get(&map, "hello"), val2) == 0);
 
-    // Test 4: Check insertion of multiple items with unique keys
-    const char *val3 = "Value3";
-    set(&map, "key1", val1);
-    set(&map, "key2", val2);
-    set(&map, "key3", val3);
-    assert(strcmp((const char *)get(&map, "key1"), val1) == 0);
-    assert(strcmp((const char *)get(&map, "key2"), val2) == 0);
-    assert(strcmp((const char *)get(&map, "key3"), val3) == 0);
+  // Test 4: Check insertion of multiple items with unique keys
+  const char *val3 = "Value3";
+  set(&map, "key1", val1);
+  set(&map, "key2", val2);
+  set(&map, "key3", val3);
+  assert(strcmp((const char *)get(&map, "key1"), val1) == 0);
+  assert(strcmp((const char *)get(&map, "key2"), val2) == 0);
+  assert(strcmp((const char *)get(&map, "key3"), val3) == 0);
 
-    // Test 5: Handle empty string as a key
-    const char *emptyKeyVal = "Empty key value";
-    set(&map, "", emptyKeyVal);
-    assert(strcmp((const char *)get(&map, ""), emptyKeyVal) == 0);
+  // Test 5: Handle empty string as a key
+  const char *emptyKeyVal = "Empty key value";
+  set(&map, "", emptyKeyVal);
+  assert(strcmp((const char *)get(&map, ""), emptyKeyVal) == 0);
 
-    // Test 6: Handle large number of insertions and retrievals
-    for (size_t i = 0; i < 100; ++i) {
-        char key[20];
-        snprintf(key, sizeof(key), "key_%zu", i);
-        char *value = (char *)malloc(20 * sizeof(char));
-        snprintf(value, 20, "value_%zu", i);
-        set(&map, key, value);
-        assert(strcmp((const char *)get(&map, key), value) == 0);
-        free(value); // Clean up to prevent memory leak
-    }
+  // Test 6: Handle large number of insertions and retrievals
+  for (size_t i = 0; i < 100; ++i) {
+    char key[20];
+    snprintf(key, sizeof(key), "key_%zu", i);
+    char *value = (char *)malloc(20 * sizeof(char));
+    snprintf(value, 20, "value_%zu", i);
+    set(&map, key, value);
+    assert(strcmp((const char *)get(&map, key), value) == 0);
+    free(value); // Clean up to prevent memory leak
+  }
 
-    // Test 7: Handle NULL value (should work without error)
-    set(&map, "null_key", NULL);
-    assert(get(&map, "null_key") == NULL);
+  // Test 7: Handle NULL value (should work without error)
+  set(&map, "null_key", NULL);
+  assert(get(&map, "null_key") == NULL);
 
-    // Test 8: Same hash different key
-    const char *collideKey1 = "collision1";
-    const char *collideKey2 = "collision2";
-    set(&map, collideKey1, "First collision value");
-    set(&map, collideKey2, "Second collision value");
-    assert(strcmp((const char *)get(&map, collideKey1), "First collision value") == 0);
-    assert(strcmp((const char *)get(&map, collideKey2), "Second collision value") == 0);
+  // Test 8: Same hash different key
+  const char *collideKey1 = "collision1";
+  const char *collideKey2 = "collision2";
+  set(&map, collideKey1, "First collision value");
+  set(&map, collideKey2, "Second collision value");
+  assert(strcmp((const char *)get(&map, collideKey1),
+                "First collision value") == 0);
+  assert(strcmp((const char *)get(&map, collideKey2),
+                "Second collision value") == 0);
 
-    // Test 9: Check that modifying retrieved data doesn't alter stored data
-    const char *retrieved = (const char *)get(&map, "key1");
-    assert(strcmp(retrieved, val1) == 0);
+  // Test 9: Check that modifying retrieved data doesn't alter stored data
+  const char *retrieved = (const char *)get(&map, "key1");
+  assert(strcmp(retrieved, val1) == 0);
 
-    // Test 10: Large values as keys and values
-    char largeKey[1000];
-    memset(largeKey, 'A', 999);
-    largeKey[999] = '\0';
-    const char *largeValue = "Large value for testing";
-    set(&map, largeKey, largeValue);
-    assert(strcmp((const char *)get(&map, largeKey), largeValue) == 0);
+  // Test 10: Large values as keys and values
+  char largeKey[1000];
+  memset(largeKey, 'A', 999);
+  largeKey[999] = '\0';
+  const char *largeValue = "Large value for testing";
+  set(&map, largeKey, largeValue);
+  assert(strcmp((const char *)get(&map, largeKey), largeValue) == 0);
 
-    // Test 11: Ensure `set` with same key replaces the value
-    const char *replaceVal = "Replacement value";
-    set(&map, "replace_key", "Old value");
-    set(&map, "replace_key", replaceVal);
-    assert(strcmp((const char *)get(&map, "replace_key"), replaceVal) == 0);
+  // Test 11: Ensure `set` with same key replaces the value
+  const char *replaceVal = "Replacement value";
+  set(&map, "replace_key", "Old value");
+  set(&map, "replace_key", replaceVal);
+  assert(strcmp((const char *)get(&map, "replace_key"), replaceVal) == 0);
 
-    // Test 12-13: Check small map resizing behavior by repeatedly adding entries
-    for (size_t i = 0; i < 20; ++i) {
-        char key[10];
-        snprintf(key, sizeof(key), "resize_%zu", i);
-        set(&map, key, "resize test");
-    }
-    assert(strcmp((const char *)get(&map, "resize_0"), "resize test") == 0);
-    assert(strcmp((const char *)get(&map, "resize_19"), "resize test") == 0);
+  // Test 12-13: Check small map resizing behavior by repeatedly adding entries
+  for (size_t i = 0; i < 20; ++i) {
+    char key[10];
+    snprintf(key, sizeof(key), "resize_%zu", i);
+    set(&map, key, "resize test");
+  }
+  assert(strcmp((const char *)get(&map, "resize_0"), "resize test") == 0);
+  assert(strcmp((const char *)get(&map, "resize_19"), "resize test") == 0);
 
-    // Test 14-18: Retrieve previously inserted keys and check values
-    assert(strcmp((const char *)get(&map, "key1"), val1) == 0);
-    assert(strcmp((const char *)get(&map, "key2"), val2) == 0);
-    assert(strcmp((const char *)get(&map, "key3"), val3) == 0);
-    assert(strcmp((const char *)get(&map, ""), emptyKeyVal) == 0);
-    assert(get(&map, "non_existent_key") == NULL);
+  // Test 14-18: Retrieve previously inserted keys and check values
+  assert(strcmp((const char *)get(&map, "key1"), val1) == 0);
+  assert(strcmp((const char *)get(&map, "key2"), val2) == 0);
+  assert(strcmp((const char *)get(&map, "key3"), val3) == 0);
+  assert(strcmp((const char *)get(&map, ""), emptyKeyVal) == 0);
+  assert(get(&map, "non_existent_key") == NULL);
 
-    // Test 19: Verify deep copy of keys (modify original key after insertion)
-    char keyToModify[10] = "mutable";
-    set(&map, keyToModify, "Before modification");
-    strcpy(keyToModify, "changed");
-    assert(strcmp((const char *)get(&map, "mutable"), "Before modification") == 0);
-    deleteHashMap(&map);
+  // Test 19: Verify deep copy of keys (modify original key after insertion)
+  char keyToModify[10] = "mutable";
+  set(&map, keyToModify, "Before modification");
+  strcpy(keyToModify, "changed");
+  assert(strcmp((const char *)get(&map, "mutable"), "Before modification") ==
+         0);
+  deleteHashMap(&map);
 
-    // Test 20: Check behavior with very large hashmap
-    HashMap largeMap = createHashMap(1000);
-    set(&largeMap, "large_test", "Testing large map");
-    assert(strcmp((const char *)get(&largeMap, "large_test"), "Testing large map") == 0);
-    deleteHashMap(&largeMap);
+  // Test 20: Check behavior with very large hashmap
+  HashMap largeMap = createHashMap(1000);
+  set(&largeMap, "large_test", "Testing large map");
+  assert(strcmp((const char *)get(&largeMap, "large_test"),
+                "Testing large map") == 0);
+  deleteHashMap(&largeMap);
+  
+  HashMap iteratedMap = createHashMap(50);
+  set(&iteratedMap, "key1", val1);
+  set(&iteratedMap, "key2", val2);
+  set(&iteratedMap, "key3", val3);
+  set(&iteratedMap, "key4", val3);
+  Iterator it = iterMap(&iteratedMap);
+  assert(it.item != NULL);
+  printf("%s %s\n", it.item->key, (const char *)it.item->value);
+  it = next(&iteratedMap, &it);
+  assert(it.item != NULL);
+  printf("%s %s\n", it.item->key, (const char *)it.item->value);
+  it = next(&iteratedMap, &it);
+  assert(it.item != NULL);
+  printf("%s %s\n", it.item->key, (const char *)it.item->value);
+  it = next(&iteratedMap, &it);
+  assert(it.item != NULL);
+  printf("%s %s\n", it.item->key,(const char *) it.item->value);
+  it = next(&iteratedMap, &it);
+  assert(it.item == NULL);
 }
-
+/**/
+/*int main(int argc, char *argv[])*/
+/*{*/
+/*  testHashMap();*/
+/*  return EXIT_SUCCESS;*/
+/*}*/

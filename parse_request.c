@@ -16,6 +16,12 @@ void freeRequest(Request *request) {
   free(request->uri);
   free(request->method);
   free(request->version);
+  HashMap *headers = request->headers;
+  Iterator it = iterMap(headers);
+  while (it.item != NULL) {
+    free((void*)it.item->value);
+    it = next(headers, &it);
+  }
   deleteHashMap(request->headers);
   free(request->headers);
 }
@@ -80,7 +86,7 @@ Request *parseRequestLine(char *str) {
   Request *request = (Request *)malloc(sizeof(Request));
   request->method = strdup(method);
   request->uri = strdup(endpoint);
-  request->version = htmlVersion;
+  request->version = strdup(htmlVersion);
   return request;
 }
 

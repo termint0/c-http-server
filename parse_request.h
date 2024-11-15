@@ -9,4 +9,5 @@ typedef struct request {
   HashMap * headers;
 } Request;
 
+void freeRequest(Request *request);
 Request *parseRequest(char *str);

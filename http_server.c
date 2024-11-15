@@ -5,11 +5,11 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "create_response.h"
 #include "http_server.h"
+#include "parse_request.h"
 
 #define BUFFLEN 4096
-
-
 
 Server *getServer(int addr, int port) {
   Server *server = (Server *)malloc(sizeof(Server));
@@ -37,8 +37,8 @@ Server *getServer(int addr, int port) {
   return server;
 }
 
-void attachEndpointMap(Server *server, HashMap *endpoints) {
-  server->endpoints = endpoints;
+void attachHandlerMap(Server *server, HashMap *handlers) {
+  server->handlers = handlers;
 }
 
 bool runServer(Server *server) {
@@ -54,41 +54,53 @@ bool runServer(Server *server) {
   }
   socklen_t addrlen = sizeof(server->address);
   int new_socket;
-  if ((new_socket = accept(server->fileDescriptor,
-                           (struct sockaddr *)&server->address, &addrlen)) <
-      0) {
-    perror("accept");
-    return false;
-  }
-  ssize_t valread;
+  while (true) {
 
-  char buffer[BUFFLEN] = {0};
-  valread = read(new_socket, buffer,
-                 BUFFLEN - 1); // subtract 1 for the null
-                               // terminator at the end
-  Request *request = parseRequest(buffer);
-
-  const char *responseStr;
-  if (request == NULL) {
-    responseStr = "ERROR";
-  } else {
-    Response *(*handler)(Request *) =
-        (Response * (*)(Request *)) get(server->endpoints, request->uri);
-    if (handler != NULL) {
-      Response *response = handler(request);
-      responseStr = response->data;
-    } else {
-
+    if ((new_socket = accept(server->fileDescriptor,
+                             (struct sockaddr *)&server->address, &addrlen)) <
+        0) {
+      perror("accept");
+      return false;
     }
-  }
+    ssize_t valread;
 
-  send(new_socket, responseStr, strlen(responseStr), 0);
+    char buffer[BUFFLEN] = {0};
+    valread = read(new_socket, buffer,
+                   BUFFLEN - 1); // subtract 1 for the null
+                                 // terminator at the end
+    Request *request = parseRequest(buffer);
+
+    String responseStr;
+    if (request == NULL) {
+      /*responseStr = "ERROR";*/
+    } else {
+      Response *(*handler)(Request *) =
+          (Response * (*)(Request *)) get(server->handlers, request->uri);
+      if (handler != NULL) {
+        Response *response = handler(request);
+        responseStr = responseToString(response);
+
+        freeResponse(response);
+        free(response);
+      } else {
+        Response r = get404Response();
+        responseStr = responseToString(&r);
+        freeResponse(&r);
+        /*free(responseStr.data);*/
+      }
+    }
+    send(new_socket, responseStr.data, responseStr.len, 0);
+    free(responseStr.data);
+
+    freeRequest(request);
+    free(request);
+    close(new_socket);
+  }
 
   // closing the connected socket
-  close(new_socket);
   // closing the listening socket
   close(server->fileDescriptor);
   return true;
 }
 void stopServer(Server *server);
-void freeServer(Server *server);
+void freeServer(Server *server) { free(server); }
