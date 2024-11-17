@@ -16,16 +16,30 @@ Response *indexEndpoint(Request *request) {
   Response *response = (Response *)malloc(sizeof(Response));
   *response = getDefaultResponse();
   response->status_code = 200;
-  char html[] = "<b>Hello world</b>";
+  char html[] = "<b>Hello world</b>\r\n<script src=\"/a.js\"></script>";
   int a;
   response->data = {strdup(html), sizeof(html) -1, sizeof(html)};
   return response;
 }
 
+Response *scriptEndpoint(Request *request) {
+  Response *response = (Response *)malloc(sizeof(Response));
+  *response = getDefaultResponse();
+  response->status_code = 200;
+  setHeader(response->headers, "Content-Type", "text/javascript");
+  char html[] = "console.log(\"hi\")";
+  int a;
+  response->data = {strdup(html), sizeof(html) -1, sizeof(html)};
+  return response;
+}
+
+
+
 int main(int argc, char const *argv[]) {
   Server *server = getServer(0, 8080);
   HashMap endpointMap = createHashMap(50);
   set(&endpointMap, "/", (void *)indexEndpoint);
+  set(&endpointMap, "/a.js", (void *)scriptEndpoint);
   attachHandlerMap(server, &endpointMap);
 
   runServer(server);

@@ -8,6 +8,10 @@
 #include "mystring.h"
 
 #define TIME_BUF_LEN 40
+void setHeader(HashMap *headers, const char * key, const char * val) {
+  free((void *) get(headers, key));
+  set(headers, key, strdup(val));
+}
 
 String strCat(String a, String b) {
   if (a.len + b.len >= a.cap) {
@@ -33,6 +37,7 @@ String strCharsCat(String a, const char *b) {
   a.data[a.len] = '\0';
   return a;
 }
+
 
 String getResponseLine(Response *response) {
   String responseLine = {(char *)malloc(50 * sizeof(char)), 0, 50};
