@@ -8,11 +8,23 @@
 #include "mystring.h"
 
 #define TIME_BUF_LEN 40
-void setHeader(HashMap *headers, const char * key, const char * val) {
-  free((void *) get(headers, key));
+void setHeader(HashMap *headers, const char *key, const char *val) {
+  free((void *)get(headers, key));
   set(headers, key, strdup(val));
 }
 
+/*
+ * Concatenates Strings "a" and "b". If buffer "a" doesn't have enough memory,
+ * reallocates its memory (therefor invalidates the String passed in as "a").
+ *
+ * a: String to concatenate. Its buffer will be used for the final string. Do
+ * not use the struct passed after calling the function, the pointer might point
+ * to freed memory.
+ *
+ * b: String to concatenate. Its buffer is safe to use after calling.
+ *
+ * returns: String struct with concatenated string. Needs to be freed by caller.
+ */
 String strCat(String a, String b) {
   if (a.len + b.len >= a.cap) {
     a.cap = (a.cap + b.cap) * 2;
@@ -25,6 +37,20 @@ String strCat(String a, String b) {
   return a;
 }
 
+/*
+ * Concatenates String "a" and char array "b". If buffer "a" doesn't have enough
+ * memory, reallocates its memory (therefor invalidates the String passed in as
+ * "a").
+ *
+ * a: String to concatenate. Its buffer will be used for the final string. Do
+ * not use the struct passed after calling the function, the pointer might point
+ * to freed memory.
+ *
+ * b: null terminated char array to concatenate. The pointer remains safe to use
+ * after calling.
+ *
+ * returns: String struct with concatenated string. Needs to be freed by caller.
+ */
 String strCharsCat(String a, const char *b) {
   size_t bLen = strlen(b);
   if (a.len + bLen >= a.cap) {
@@ -38,7 +64,15 @@ String strCharsCat(String a, const char *b) {
   return a;
 }
 
-
+/*
+ * Create string representing first line of response (HTTP/1.1 200 OK) and the
+ * newline chars.
+ *
+ * Response: pointer to response struct. Function does not take ownership.
+ *
+ * returns: String with first line of response in it. Needs to be freed by
+ * caller.
+ */
 String getResponseLine(Response *response) {
   String responseLine = {(char *)malloc(50 * sizeof(char)), 0, 50};
   responseLine = strCat(responseLine, response->httpVersion);
@@ -58,6 +92,15 @@ String getResponseLine(Response *response) {
   return responseLine;
 }
 
+/*
+ * Create string with the header line (Content-type: text/html) and the
+ * newline chars.
+ *
+ * Response: pointer to response struct. Function does not take ownership.
+ *
+ * returns: String with header line in it. Needs to be freed by
+ * caller.
+ */
 String headerToLine(Item *item) {
   String headersString = {(char *)malloc(20 * sizeof(char)), 0, 20};
   headersString = strCharsCat(headersString, item->key);
@@ -67,6 +110,15 @@ String headerToLine(Item *item) {
   return headersString;
 }
 
+/*
+ * Create string with the headers and the
+ * newline chars.
+ *
+ * Response: pointer to response struct. Function does not take ownership.
+ *
+ * returns: String with header line in it. Needs to be freed by
+ * caller.
+ */
 String headersToString(Response *response) {
   String headersString = {(char *)malloc(50 * sizeof(char)), 0, 50};
 
@@ -98,6 +150,13 @@ String responseToString(Response *response) {
   return responseStr;
 }
 
+/*
+ * description
+ * 
+ * buf: buffer of length at least TIME_BUF_LEN to write date into.
+ *
+ * returns: void 
+ */
 void getDate(char *buf) {
   time_t t = time(NULL);
   tm *now = localtime(&t);
@@ -141,7 +200,7 @@ void freeResponse(Response *response) {
   HashMap *headers = response->headers;
   Iterator it = iterMap(headers);
   while (it.item != NULL) {
-    free((void*)it.item->value);
+    free((void *)it.item->value);
     it = next(headers, &it);
   }
   deleteHashMap(response->headers);

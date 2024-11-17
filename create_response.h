@@ -61,4 +61,15 @@ Response get404Response();
  * freed at the end of the lifecycle with freeResponse()
  */
 Response get501Response();
+
+/*
+ * Frees the response's memory.
+ *
+ * RESULTS IN UNDEFINED BEHAVIOR IF ANYTHING BUT
+ * PRIMITIVE TYPES (int, bool, ...) IS STACK ALLOCATED.
+ *
+ * DOES NOT FREE THE MEMORY ALLOCATED FOR response ITSELF
+ *
+ * response: Rensponse to free.
+ */
 void freeResponse(Response *response);
