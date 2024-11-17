@@ -43,6 +43,7 @@ void attachHandlerMap(Server *server, HashMap *handlers) {
 
 bool runServer(Server *server) {
   // Forcefully attaching socket to the port 8080
+  printf("Starting server\n");
   if (bind(server->fileDescriptor, (struct sockaddr *)&server->address,
            sizeof(server->address)) < 0) {
     perror("bind failed");
@@ -54,12 +55,20 @@ bool runServer(Server *server) {
   }
   socklen_t addrlen = sizeof(server->address);
   int new_socket;
-  while (true) {
+  server->stopRequest = false;
+  server->running = true;
+  while (!server->stopRequest) {
 
     if ((new_socket = accept(server->fileDescriptor,
                              (struct sockaddr *)&server->address, &addrlen)) <
         0) {
-      perror("accept");
+      server->running = false;
+      if (!server->stopRequest) {
+        perror("accept\n");
+      } else {
+        printf("Server shutdown requested\n");
+      }
+      /*perror("accept");*/
       return false;
     }
     ssize_t valread;
@@ -96,11 +105,12 @@ bool runServer(Server *server) {
     free(request);
     close(new_socket);
   }
-
-  // closing the connected socket
-  // closing the listening socket
-  close(server->fileDescriptor);
+      server->running = false;
   return true;
 }
-void stopServer(Server *server);
+void stopServer(Server *server) {
+  while (server->running) {}
+  close(server->fileDescriptor);
+        printf("Server shutdown successful\n");
+}
 void freeServer(Server *server) { free(server); }
