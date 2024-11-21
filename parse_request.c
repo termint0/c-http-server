@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -19,7 +20,7 @@ void freeRequest(Request *request) {
   HashMap *headers = request->headers;
   Iterator it = iterMap(headers);
   while (it.item != NULL) {
-    free((void*)it.item->value);
+    free((void *)it.item->value);
     it = next(headers, &it);
   }
   deleteHashMap(request->headers);
@@ -108,7 +109,7 @@ bool parseHeaderLine(HashMap *headers, char *line) {
   while (*str != '\0') {
     ++str;
   }
-  char * lastchar = trimWhiteSpace(val, str);
+  char *lastchar = trimWhiteSpace(val, str);
   *lastchar = '\0';
   set(headers, key, strdup(val));
   return true;

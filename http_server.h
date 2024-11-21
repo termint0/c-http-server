@@ -1,4 +1,5 @@
 #include <signal.h>
+#include <stdbool.h>
 #include <netinet/in.h>
 
 #include "hashmap.h"
@@ -8,8 +9,8 @@ typedef struct server {
   int fileDescriptor;
   struct sockaddr_in address;
   HashMap * handlers;
-  volatile sig_atomic_t stopRequest = false;
-  bool running = false;
+  volatile sig_atomic_t stopRequest;
+  bool running;
 } Server;
 
 

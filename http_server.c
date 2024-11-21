@@ -1,4 +1,5 @@
 #include <netinet/in.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,8 +33,9 @@ Server *getServer(int addr, int port) {
   server->address.sin_family = AF_INET;
   server->address.sin_addr.s_addr = addr;
   server->address.sin_port = htons(port);
-
   server->fileDescriptor = server_fd;
+  server->stopRequest = false;
+  server->running = false;
   return server;
 }
 
@@ -105,12 +107,13 @@ bool runServer(Server *server) {
     free(request);
     close(new_socket);
   }
-      server->running = false;
+  server->running = false;
   return true;
 }
 void stopServer(Server *server) {
-  while (server->running) {}
+  while (server->running) {
+  }
   close(server->fileDescriptor);
-        printf("Server shutdown successful\n");
+  printf("Server shutdown successful\n");
 }
 void freeServer(Server *server) { free(server); }

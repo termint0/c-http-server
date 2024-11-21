@@ -1,5 +1,5 @@
-CC = g++
-CFLAGS = -Wall -pedantic -fsanitize=address -g
+CC = gcc
+CFLAGS = -Wall -pedantic -std=gnu17 -fsanitize=address -g
 # CFLAGS = -Wall -pedantic -g
 main : main.o http_server.o hashmap.o parse_request.o create_response.o
 	$(CC) $(CFLAGS) $? -o $@

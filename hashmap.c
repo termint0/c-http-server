@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <ios>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,23 +8,29 @@
 Iterator iterMap(HashMap *map) {
   for (size_t i = 0; i < map->n; ++i) {
     if (map->data[i].len != 0) {
-      return {map->data[i].data, i, 0};
+      Iterator newIt = {map->data[i].data, i, 0};
+      return newIt;
     }
   }
-  return {NULL, 0, 0};
+  Iterator newIt = {NULL, 0, 0};
+  return newIt;
 }
 Iterator next(HashMap *map, Iterator *it) {
-  Bucket * bucket = map->data + it->bucketIdx;
+  Bucket *bucket = map->data + it->bucketIdx;
   if (it->itemIdx < bucket->len - 1) {
-    return {map->data[it->bucketIdx].data + it->itemIdx + 1, it->bucketIdx, it->itemIdx + 1};
+    Iterator newIt = {map->data[it->bucketIdx].data + it->itemIdx + 1,
+                      it->bucketIdx, it->itemIdx + 1};
+    return newIt;
   }
 
   for (size_t i = it->bucketIdx + 1; i < map->n; ++i) {
     if (map->data[i].len != 0) {
-      return {map->data[i].data, i, 0};
+      Iterator newIt = {map->data[i].data, i, 0};
+      return newIt;
     }
   }
-  return {NULL, 0, 0};
+  Iterator newIt = {NULL, 0, 0};
+  return newIt;
 }
 
 size_t modPow(size_t n, size_t mod) {
@@ -49,7 +54,8 @@ HashMap createHashMap(size_t n) {
   HashMap map = {NULL, n};
   map.data = (Bucket *)malloc(n * sizeof(Bucket));
   for (size_t i = 0; i < n; ++i) {
-    map.data[i] = {NULL, 0, 0};
+    Bucket bucket = {NULL, 0, 0};
+    map.data[i] = bucket;
   }
   return map;
 }
@@ -216,7 +222,7 @@ void testHashMap() {
   assert(strcmp((const char *)get(&largeMap, "large_test"),
                 "Testing large map") == 0);
   deleteHashMap(&largeMap);
-  
+
   HashMap iteratedMap = createHashMap(50);
   set(&iteratedMap, "key1", val1);
   set(&iteratedMap, "key2", val2);
@@ -233,7 +239,7 @@ void testHashMap() {
   printf("%s %s\n", it.item->key, (const char *)it.item->value);
   it = next(&iteratedMap, &it);
   assert(it.item != NULL);
-  printf("%s %s\n", it.item->key,(const char *) it.item->value);
+  printf("%s %s\n", it.item->key, (const char *)it.item->value);
   it = next(&iteratedMap, &it);
   assert(it.item == NULL);
 }

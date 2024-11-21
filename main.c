@@ -1,5 +1,6 @@
 #include <netinet/in.h>
 #include <signal.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,8 +19,8 @@ Response *indexEndpoint(Request *request) {
   *response = getDefaultResponse();
   response->status_code = 200;
   char html[] = "<b>Hello world</b>\r\n<script src=\"/a.js\"></script>";
-  int a;
-  response->data = {strdup(html), sizeof(html) - 1, sizeof(html)};
+  String respData = {strdup(html), sizeof(html) - 1, sizeof(html)};
+  response->data = respData;
   return response;
 }
 
@@ -29,8 +30,8 @@ Response *scriptEndpoint(Request *request) {
   response->status_code = 200;
   setHeader(response->headers, "Content-Type", "text/javascript");
   char html[] = "console.log(\"hi\")";
-  int a;
-  response->data = {strdup(html), sizeof(html) - 1, sizeof(html)};
+  String respData = {strdup(html), sizeof(html) - 1, sizeof(html)};
+  response->data = respData;
   return response;
 }
 

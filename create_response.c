@@ -159,7 +159,7 @@ String responseToString(Response *response) {
  */
 void getDate(char *buf) {
   time_t t = time(NULL);
-  tm *now = localtime(&t);
+  struct tm *now = localtime(&t);
   strftime(buf, TIME_BUF_LEN, "%a, %d %b %Y %H:%M:%S %Z", now);
 }
 
@@ -174,14 +174,16 @@ Response getDefaultResponse() {
   const char httpVersion[] = "HTTP/1.1";
   String http = {strdup(httpVersion), sizeof(httpVersion) - 1,
                  sizeof(httpVersion)};
-  return {200, http, {NULL, 0, 0}, headers};
+  Response resp = {200, http, {NULL, 0, 0}, headers};
+  return resp;
 }
 
 Response get404Response() {
   Response response = getDefaultResponse();
   response.status_code = 404;
   char html[] = "Not found";
-  response.data = {strdup(html), sizeof(html) - 1, sizeof(html)};
+  String respStr = {strdup(html), sizeof(html) - 1, sizeof(html)};
+  response.data = respStr;
   return response;
 }
 
@@ -189,7 +191,8 @@ Response get501Response() {
   Response response = getDefaultResponse();
   response.status_code = 501;
   char html[] = "Not implemented";
-  response.data = {strdup(html), sizeof(html) - 1, sizeof(html)};
+  String respStr = {strdup(html), sizeof(html) - 1, sizeof(html)};
+  response.data = respStr;
   return response;
 }
 
