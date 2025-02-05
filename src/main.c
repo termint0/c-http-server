@@ -42,6 +42,8 @@ void onSigInt(int sig) {
 
 int main(int argc, char const *argv[]) {
   Server *server = getServer(0, 8080);
+  String staticPath = strFrom("static/");
+  addStaticPath(server, &staticPath);
   g_Server = server;
   HashMap endpointMap = createHashMap(50);
 

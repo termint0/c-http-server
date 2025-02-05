@@ -1,5 +1,6 @@
 #include "hashmap.h"
 #include "mystring.h"
+#pragma once
 
 typedef struct response {
   int status_code;

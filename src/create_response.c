@@ -13,64 +13,13 @@ void setHeader(HashMap *headers, const char *key, const char *val) {
   set(headers, key, strdup(val));
 }
 
-/*
- * Concatenates Strings "a" and "b". If buffer "a" doesn't have enough memory,
- * reallocates its memory (therefor invalidates the String passed in as "a").
+/**
+ * @brief Create string representing first line of response (HTTP/1.1 200 OK)
+ * and the newline chars.
  *
- * a: String to concatenate. Its buffer will be used for the final string. Do
- * not use the struct passed after calling the function, the pointer might point
- * to freed memory.
+ * @param  pointer to response struct. Function does not take ownership.
  *
- * b: String to concatenate. Its buffer is safe to use after calling.
- *
- * returns: String struct with concatenated string. Needs to be freed by caller.
- */
-String strCat(String a, String b) {
-  if (a.len + b.len >= a.cap) {
-    a.cap = (a.cap + b.cap) * 2;
-    a.data = (char *)realloc(a.data, a.cap * sizeof(char));
-  }
-  for (size_t i = 0; i < b.len; ++i) {
-    a.data[a.len++] = b.data[i];
-  }
-  a.data[a.len] = '\0';
-  return a;
-}
-
-/*
- * Concatenates String "a" and char array "b". If buffer "a" doesn't have enough
- * memory, reallocates its memory (therefor invalidates the String passed in as
- * "a").
- *
- * a: String to concatenate. Its buffer will be used for the final string. Do
- * not use the struct passed after calling the function, the pointer might point
- * to freed memory.
- *
- * b: null terminated char array to concatenate. The pointer remains safe to use
- * after calling.
- *
- * returns: String struct with concatenated string. Needs to be freed by caller.
- */
-String strCharsCat(String a, const char *b) {
-  size_t bLen = strlen(b);
-  if (a.len + bLen >= a.cap) {
-    a.cap = (a.cap + bLen) * 2;
-    a.data = (char *)realloc(a.data, a.cap * sizeof(char));
-  }
-  for (size_t i = 0; i < bLen; ++i) {
-    a.data[a.len++] = b[i];
-  }
-  a.data[a.len] = '\0';
-  return a;
-}
-
-/*
- * Create string representing first line of response (HTTP/1.1 200 OK) and the
- * newline chars.
- *
- * Response: pointer to response struct. Function does not take ownership.
- *
- * returns: String with first line of response in it. Needs to be freed by
+ * @return String with first line of response in it. Needs to be freed by
  * caller.
  */
 String getResponseLine(Response *response) {
@@ -152,10 +101,10 @@ String responseToString(Response *response) {
 
 /*
  * description
- * 
+ *
  * buf: buffer of length at least TIME_BUF_LEN to write date into.
  *
- * returns: void 
+ * returns: void
  */
 void getDate(char *buf) {
   time_t t = time(NULL);

@@ -8,7 +8,9 @@
 
 #include "create_response.h"
 #include "http_server.h"
+#include "mystring.h"
 #include "parse_request.h"
+#include "static_files.h"
 
 #define BUFFLEN 4096
 
@@ -30,12 +32,15 @@ Server *getServer(int addr, int port) {
     return NULL;
   }
 
+  StringArr staticDirs = {NULL, 0, 0};
+
   server->address.sin_family = AF_INET;
   server->address.sin_addr.s_addr = addr;
   server->address.sin_port = htons(port);
   server->fileDescriptor = server_fd;
   server->stopRequest = false;
   server->running = false;
+  server->staticDirs = staticDirs;
   return server;
 }
 
@@ -85,19 +90,25 @@ bool runServer(Server *server) {
     if (request == NULL) {
       /*responseStr = "ERROR";*/
     } else {
-      Response *(*handler)(Request *) =
-          (Response * (*)(Request *)) get(server->handlers, request->uri);
-      if (handler != NULL) {
-        Response *response = handler(request);
-        responseStr = responseToString(response);
-
-        freeResponse(response);
-        free(response);
-      } else {
-        Response r = get404Response();
+      int staticIdx = isStaticFile(server, request->uri);
+      if (staticIdx != -1) {
+        String uriString = strFrom(request->uri);
+        Response r = getStaticFile(&uriString);
         responseStr = responseToString(&r);
-        freeResponse(&r);
-        /*free(responseStr.data);*/
+      } else {
+        Response *(*handler)(Request *) =
+            (Response * (*)(Request *)) get(server->handlers, request->uri);
+        if (handler != NULL) {
+          Response *response = handler(request);
+          responseStr = responseToString(response);
+          freeResponse(response);
+          free(response);
+        } else {
+          Response r = get404Response();
+          responseStr = responseToString(&r);
+          freeResponse(&r);
+          /*free(responseStr.data);*/
+        }
       }
     }
     send(new_socket, responseStr.data, responseStr.len, 0);
@@ -117,3 +128,13 @@ void stopServer(Server *server) {
   printf("Server shutdown successful\n");
 }
 void freeServer(Server *server) { free(server); }
+void addStaticPath(Server *server, String *path) {
+  String newPath = {strdup(path->data), .len = path->len, .cap = path->cap};
+  if (server->staticDirs.len == server->staticDirs.cap) {
+    server->staticDirs.cap =
+        server->staticDirs.cap == 0 ? 1 : server->staticDirs.cap;
+    server->staticDirs.data = (String *)realloc(
+        server->staticDirs.data, server->staticDirs.cap * sizeof(String));
+  }
+  server->staticDirs.data[server->staticDirs.len++] = newPath;
+}
